@@ -22,10 +22,6 @@ public class AuthorService {
         this.openLibraryService = openLibraryService;
     }
 
-    public List<Author> findAll() {
-        return authorRepository.findAll();
-    }
-
     public Author findByAKey(String aKey) {
         return authorRepository.findByAkey(aKey);
     }
@@ -39,8 +35,8 @@ public class AuthorService {
         if (dbResult.hasContent()) {
             return dbResult;
         }
-        List<Author> authors = openLibraryService.fetchAuthorByName(authorName, 0, 10);
-        return (Page<Author>) authorRepository.saveAll(authors);
+        openLibraryService.fetchAuthorByName(authorName, 0, 10);
+        return authorRepository.findByFullTextSearch(authorName, pageable);
     }
 
 }

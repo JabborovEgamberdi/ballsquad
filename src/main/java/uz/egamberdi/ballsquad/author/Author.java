@@ -25,12 +25,9 @@ public class Author {
     @Column(nullable = false)
     private String name;
 
-    private Integer workCount;
-
-    public Author(String authorName, String authorKey, int workCount) {
+    public Author(String authorName, String authorKey) {
         this.akey = authorKey;
         this.name = authorName;
-        this.workCount = workCount;
     }
 
     public Author() {

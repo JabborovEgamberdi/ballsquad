@@ -17,17 +17,8 @@ public class AuthorController {
         this.authorService = authorService;
     }
 
-    @GetMapping("/")
-    public HttpEntity<?> getAll() {
-        try {
-            return ResponseEntity.ok(authorService.findAll());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
     @GetMapping
-    public HttpEntity<?> getAuthor(@RequestParam(name = "q", defaultValue = "", required = false) String name,
+    public HttpEntity<?> getAuthor(@RequestParam(name = "q", defaultValue = " ", required = false) String name,
                                    @RequestParam(defaultValue = "0", required = false) int page,
                                    @RequestParam(defaultValue = "10", required = false) int size) {
         try {

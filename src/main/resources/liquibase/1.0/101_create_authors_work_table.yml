@@ -16,6 +16,7 @@ databaseChangeLog:
                   name: title
                   type: VARCHAR(255)
                   constraints:
+                    unique: true
                     nullable: false
               - column:
                   name: author_id

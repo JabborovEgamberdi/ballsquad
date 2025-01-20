@@ -15,6 +15,7 @@ import uz.egamberdi.ballsquad.work.AuthorsWorkRepository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -34,7 +35,7 @@ public class OpenLibraryService {
         this.authorsWorkRepository = authorsWorkRepository;
     }
 
-    public List<Author> fetchAuthorByName(String name, int offset, int limit) {
+    public List<Author> fetchAuthorByName1(String name, int offset, int limit) {
         String url = String.format("%s?q=%s&offset=%d&limit=%d", OPEN_LIBRARY_AUTHORS_API_URL, name, offset, limit);
         List<Author> authors = new ArrayList<>();
         try (Response response = okHttpClient.newCall(request(url)).execute()) {
@@ -46,13 +47,12 @@ public class OpenLibraryService {
                 JSONObject authorObj = authorArr.getJSONObject(i);
                 String authorName = authorObj.getString("name");
                 String authorKey = authorObj.getString("key");
-                int workCount = authorObj.getInt("work_count");
-                Author author = new Author(authorName, authorKey, workCount);
+                Author author = new Author(authorName, authorKey);
                 authors.add(author);
             }
-            while (offset > numFound) {
-                authorRepository.saveAll(authors);
-                authors = new ArrayList<>();
+            authorRepository.saveAll(authors);
+            authors = new ArrayList<>();
+            while (offset < numFound) {
                 offset += limit;
                 fetchAuthorByName(name, offset, limit);
             }
@@ -60,6 +60,53 @@ public class OpenLibraryService {
             throw new RuntimeException(e);
         }
         return authors;
+    }
+
+    public List<Author> fetchAuthorByName(String name, int offset, int limit) {
+        String urlTemplate = "%s?q=%s&offset=%d&limit=%d";
+        List<Author> allAuthors = new ArrayList<>();
+        boolean hasMoreData = true;
+        while (hasMoreData) {
+            String url = String.format(urlTemplate, OPEN_LIBRARY_AUTHORS_API_URL, name, offset, limit);
+            try (Response response = okHttpClient.newCall(request(url)).execute()) {
+                if (response.body() == null) {
+                    throw new RuntimeException("Response body is null");
+                }
+                JSONObject jsonObject = new JSONObject(response.body().string());
+                int numFound = jsonObject.getInt("numFound");
+                JSONArray authorArr = jsonObject.getJSONArray("docs");
+                List<Author> authors = new ArrayList<>();
+                for (int i = 0; i < authorArr.length(); i++) {
+                    JSONObject authorObj = authorArr.getJSONObject(i);
+                    String authorName = authorObj.optString("name", null);
+                    String authorKey = authorObj.optString("key", null);
+                    authors.add(new Author(authorName, authorKey));
+                }
+                saveNewAuthors(authors);
+                allAuthors.addAll(authors);
+                offset += limit;
+                hasMoreData = offset < numFound;
+            } catch (IOException e) {
+                throw new RuntimeException("Error while fetching authors from OpenLibrary API", e);
+            }
+        }
+        return allAuthors;
+    }
+
+    private void saveNewAuthors(List<Author> authors) {
+        List<String> authorKeys = authors.stream()
+                .map(Author::getAkey)
+                .collect(Collectors.toList());
+        List<String> existingKeys = authorRepository.findAllByAkeyIn(authorKeys)
+                .stream()
+                .map(Author::getAkey)
+                .toList();
+        List<Author> newAuthors = authors.stream()
+                .filter(author -> !existingKeys.contains(author.getAkey()))
+                .collect(Collectors.toList());
+        if (!newAuthors.isEmpty()) {
+            authorRepository.saveAll(newAuthors);
+        }
     }
 
     public List<AuthorsWork> fetchWorksByAuthorId(Author author) {

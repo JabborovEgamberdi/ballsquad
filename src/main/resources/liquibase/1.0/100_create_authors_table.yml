@@ -23,6 +23,3 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     unique: true
-              - column:
-                  name: work_count
-                  type: INT
