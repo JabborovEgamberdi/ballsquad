@@ -1,0 +1,1 @@
+ALTER TABLE authors_work ADD UNIQUE (title);

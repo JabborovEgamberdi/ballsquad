@@ -1,0 +1,40 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ballsquad
+  datasource:
+    #    url: jdbc:mysql://mysqldb:3306/authorsdb
+    url: jdbc:mysql://localhost:3306/authorsdb
+    username: root
+    password: rootpassword
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+  liquibase:
+    change-log: classpath:liquibase/changelog-master.yml
+    drop-first: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    metrics:
+      access: read_only
+    prometheus:
+      access: read_only
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+opentracing:
+  jaeger:
+    http-sender:
+      url: http://host.docker.internal:14268/api/traces
