@@ -5,8 +5,8 @@ spring:
   application:
     name: ballsquad
   datasource:
-    #    url: jdbc:mysql://mysqldb:3306/authorsdb
-    url: jdbc:mysql://localhost:3306/authorsdb
+#    url: jdbc:mysql://localhost:3306/authorsdb
+    url: jdbc:mysql://mysqldb:3306/authorsdb
     username: root
     password: rootpassword
     driver-class-name: com.mysql.cj.jdbc.Driver
