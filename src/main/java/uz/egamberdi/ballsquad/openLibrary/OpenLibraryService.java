@@ -22,6 +22,7 @@ public class OpenLibraryService {
 
     private static final String OPEN_LIBRARY_AUTHORS_API_URL = "https://openlibrary.org/search/authors.json";
     private static final String OPEN_LIBRARY_AUTHORS_WORK_API_URL = "https://openlibrary.org/authors/";
+    private static final String OPEN_LIBRARY_API_URL = "https://openlibrary.org";
 
     private final OkHttpClient okHttpClient;
     private final AuthorRepository authorRepository;
@@ -61,34 +62,6 @@ public class OpenLibraryService {
         return authors;
     }
 
-    public List<AuthorsWork> fetchWorksByAuthorId1(Author author) {
-        final String suffix = "/works.json";
-        final String url = String.format("%s%s%s", OPEN_LIBRARY_AUTHORS_WORK_API_URL, author.getAkey(), suffix);
-        log.info("OpenLibrary url: {}", url);
-        List<AuthorsWork> works = new ArrayList<>();
-        try (Response response = okHttpClient.newCall(request(url)).execute()) {
-            assert response.body() != null;
-            JSONObject jsonObject = new JSONObject(response.body().string());
-            JSONObject links = jsonObject.getJSONObject("links");
-            String next = links.optString("next", null);
-            JSONArray authorWorks = jsonObject.getJSONArray("entries");
-            for (int i = 0; i < authorWorks.length(); i++) {
-                JSONObject authorWorkObj = authorWorks.getJSONObject(i);
-                String title = authorWorkObj.optString("title", null);
-                AuthorsWork authorsWork = new AuthorsWork(title, author);
-                works.add(authorsWork);
-            }
-            authorsWorkRepository.saveAll(works);
-            if (next != null) {
-                works = new ArrayList<>();
-                fetchWorksByAuthorId(author);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return works;
-    }
-
     public List<AuthorsWork> fetchWorksByAuthorId(Author author) {
         final String suffix = "/works.json";
         String url = String.format("%s%s%s", OPEN_LIBRARY_AUTHORS_WORK_API_URL, author.getAkey(), suffix);
@@ -109,6 +82,7 @@ public class OpenLibraryService {
                 authorsWorkRepository.saveAll(allWorks);
                 JSONObject links = jsonObject.optJSONObject("links");
                 url = links != null ? links.optString("next", null) : null;
+                url = url != null ? OPEN_LIBRARY_API_URL + url : null;
                 log.info("Next page URL: {}", url);
             } catch (Exception e) {
                 throw new RuntimeException(e);
